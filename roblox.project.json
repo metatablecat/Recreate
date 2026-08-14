@@ -1,0 +1,13 @@
+{
+  "name": "Recreate",
+  "tree": {
+    "$className": "Folder",
+
+		"Recreate": {
+			"$path": "src"
+		},
+		"Relayer": {
+			"$path": "Rendering/Relayer.luau"
+		}
+  }
+}
