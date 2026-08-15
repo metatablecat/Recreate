@@ -7,7 +7,13 @@
 			"$path": "src"
 		},
 		"Relayer": {
-			"$path": "Rendering/Relayer.luau"
+			"$path": "interops/Roblox/Relayer.luau"
+		},
+		"RecreateSignals": {
+			"$path": "interops/Roblox/RecreateSignals.luau"
+		},
+		"Signals": {
+			"$path": "interops/Roblox/Signals"
 		}
   }
 }
