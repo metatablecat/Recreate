@@ -18,7 +18,6 @@ export type NodeRef = {
 export type RCImplementor = {
 	watch: (Watchable, NodeRef, string|SpecialKey) -> unknown,
 	unwatch: (Watchable, NodeRef, (string|SpecialKey)?) -> (),
-	resync: (Watchable, NodeRef, string, unknown) -> ()
 }
 
 export type Watchable = {
@@ -34,8 +33,6 @@ export type Node = {
 	Props: Dictionary<string, unknown>,
 	SpecialKeys: Dictionary<SpecialKey, unknown>,
 	WatchableState: MapIndex<Watchable, string>,
-	PropBoundWatchables: MapIndex<string, Watchable>,
-	Dirty: Map<string>,
 
 	BoundToSource: boolean,
 	Children: Map<Node>,
@@ -59,7 +56,7 @@ export type Pipeline = {
 	setParent: (node: Node, parent: Node?, oldParent: Node?) -> ()?,
 	setChildrenBatch: (node: Node, newChildren: {Node}, removedChildren: {Node}) -> ()?,
 	destroy: (node: Node) -> ()?,
-	setProperty: (node: Node, prop: string, val: any, oldVal: any, resync: boolean) -> ()?,
+	setProperty: (node: Node, prop: string, val: any, oldVal: any) -> ()?,
 
 	-- specialkey logic
 	specialKeySet: (node: Node, sk: SpecialKey, val: any, oldval: any) -> ()?,

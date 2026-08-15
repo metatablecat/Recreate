@@ -23,7 +23,6 @@ function NodeLib.destroy(node: Types.NodeRef)
 
 	inode.Destroyed = true
 	Common.RefStorage[node.ID] = nil
-	inode.PropBoundWatchables = {}
 
 	local parent = inode.Parent
 	if parent then
@@ -90,57 +89,6 @@ function NodeLib.setParent(node: Types.NodeRef, parent: Types.NodeRef?)
 	end
 
 	Renderer.send("setParent", in1, in2, oldParent)
-end
-
-function NodeLib.setProperty(node: Types.NodeRef, prop: string, val: any)
-	if type(prop) ~= "string" then
-		if Common.isLikelySpecialKey(prop) then error("Use SpecialKey operations to manipulate special keys") end
-		error("Prop key is invalid type, expected string")
-	end
-
-	local inode = resolvePublic(node)
-	if inode.Dirty[prop] then error(`Prop {prop} is desynced, use resync to bring it back into sync`) end
-
-	local ov = inode.Props[prop]
-	if ov == val then	return end
-	inode.Props[prop] = val
-
-	Renderer.send("setProperty", inode, prop, val, ov, false)
-end
-
-function NodeLib.desync(node: Types.NodeRef, prop: string)
-	local inode = resolvePublic(node)
-
-	if type(prop) ~= "string" then
-		if Common.isLikelySpecialKey(prop) then error("Special keys cannot be desynced") end
-		error("Prop key is invalid type, expected string")
-	end
-
-	inode.Dirty[prop] = true
-end
-
-function NodeLib.isDesynced(node: Types.NodeRef, prop: string): boolean
-	local inode = resolvePublic(node)
-	return inode.Dirty[node] ~= nil
-end
-
-function NodeLib.resync(node: Types.NodeRef, prop: string, nextval: any)
-	local inode = resolvePublic(node)
-	if not inode.Dirty[prop] then return end
-
-	inode.Dirty[prop] = nil
-	local ov = inode.Props[prop]
-	if ov == nextval then	return end
-	inode.Props[prop] = nextval
-
-	for _, watchables in inode.PropBoundWatchables do
-		for watchable in watchables do
-			local resync = watchable.__RCImplementor.resync
-			if resync then resync(watchable, node, prop, nextval) end
-		end
-	end
-
-	Renderer.send("setProperty", inode, prop, nextval, ov, true)
 end
 
 const function batchIterateChildren(node: Types.Node, add: {Types.Node}?, remove: {Types.Node}?)

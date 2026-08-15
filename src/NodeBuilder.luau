@@ -202,10 +202,9 @@ const function handleExternal(
 	watchableState: Types.MapIndex<Types.Watchable, string>,
 	nodeDepthStack: {number}
 ): ConstructionError?
-	local props: {[string]: unknown}, sks: {[Types.SpecialKey]: unknown}, propWatchableState: Types.MapIndex<string, Types.Watchable> = {}, {}, {}
+	local props: {[string]: unknown}, sks: {[Types.SpecialKey]: unknown} = {}, {}
 	node.Props = props
 	node.SpecialKeys = sks
-	node.PropBoundWatchables = propWatchableState
 
 	for key, value in description do
 		if key == Common.KEY_Children then continue end
@@ -225,7 +224,6 @@ const function handleExternal(
 			if isWatchable(value) then
 				local didBind, err = bindWatchableConstruction(node, watchableState, value, key, nodeDepthStack)
 				if not didBind then return err end
-				Common.DictionaryIndexerSet(propWatchableState, key, value, true)
 				value = err
 			end
 
@@ -254,8 +252,6 @@ function makeDescriptionBlob(
 	local node = {}::Types.Node -- required to marshal the node out in the typechecks
 	node.BoundToSource = false
 	if type(description) ~= "table" then return false, node, nil, false, constructionError("MakeDescription is not a table", nodeDepthStack) end
-
-	node.Dirty = {}
 
 	local ce: ConstructionError, ref: Types.NodeRef
 	ref, ce = createRef(node, description, nodeDepthStack)

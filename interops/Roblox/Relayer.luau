@@ -337,7 +337,7 @@ function PIPELINE.destroy(node: Recreate.RendererNode)
 	destroyNodeItem(renderstate, node)
 end
 
-function PIPELINE.setProperty(node: Recreate.RendererNode, prop: string, val: any, oldVal: any, resync: boolean)
+function PIPELINE.setProperty(node: Recreate.RendererNode, prop: string, val: any, oldVal: any)
 	local renderstate = RENDER_STATE[node]
 	if not renderstate then return end
 	
