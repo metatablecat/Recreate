@@ -119,6 +119,20 @@ const function batchIterateChildren(node: Types.Node, add: {Types.Node}?, remove
 	Renderer.send("setChildrenBatch", node, add or {}, remove or {})
 end
 
+function NodeLib.setProperty(node: Types.NodeRef, prop: string, val: any)
+	if type(prop) ~= "string" then
+		if Common.isLikelySpecialKey(prop) then error("Use SpecialKey operations to manipulate special keys") end
+		error("Prop key is invalid type, expected string")
+	end
+
+	local inode = resolvePublic(node)
+	local ov = inode.Props[prop]
+	if ov == val then	return end
+	inode.Props[prop] = val
+
+	Renderer.send("setProperty", inode, prop, val, ov, false)
+end
+
 function NodeLib.specialKeySet(node: Types.NodeRef, sk: Types.SpecialKey, val: any)
 	local inode = resolvePublic(node)
 	if sk == Common.KEY_Children then
