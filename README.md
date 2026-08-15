@@ -1,3 +1,4 @@
+<img align="center" src="./logos/full_logo_colordark.png#gh-light-mode-only" alt="Recreate Logo"><img align="center" src="./logos/full_logo_color.png#gh-dark-mode-only" alt="Recreate Logo">
 # Recreate
 
 This is rewritten from the ground up and will likely have issues, help us fix it!
