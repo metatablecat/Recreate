@@ -1,8 +1,8 @@
 # Recreate
 
-This is early software and will likely have issues, help us fix it!
+This is rewritten from the ground up and will likely have issues, help us fix it!
 
-Built from the ground up with 3 years of experience using different experimental versions, Recreate approaches UI frameworks differently on Roblox.
+Recreate is my internal UI framework that I’ve been using in many forms since 2023, it started as a descendant of `RbxUtility.Create`, but expanded to include several framework features. I wrote my own framework as I found the two major options at the time to have issues that made them unusable.
 
 # Motivation
 
@@ -34,4 +34,4 @@ local n = Recreate.create {
 Relayer.mount(n)
 ```
 
-You may notice both a Recreate and Relayer library, this is because rendering is seperate from the main library.
+You may notice both a Recreate and Relayer library, this is because rendering is seperate from the main library, this only scratches the top of Recreate's features.
