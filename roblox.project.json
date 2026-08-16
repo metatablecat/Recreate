@@ -4,16 +4,13 @@
     "$className": "Folder",
 
 		"Recreate": {
-			"$path": "src"
+			"$path": "src/lib"
 		},
-		"Relayer": {
-			"$path": "interops/Roblox/Relayer.luau"
-		},
-		"RecreateSignals": {
-			"$path": "interops/Roblox/RecreateSignals.luau"
+		"Renderer": {
+			"$path": "src/interops/Roblox/Relayer.luau"
 		},
 		"Signals": {
-			"$path": "interops/Roblox/Signals"
+			"$path": "src/interops/Roblox/Signals"
 		}
   }
 }
