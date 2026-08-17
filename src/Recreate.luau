@@ -51,8 +51,7 @@ type Props = {
 }
 
 type HydrationEffects = {
-	order: {Signals.setter<boolean>},
-	assigned: {[Signals.setter<boolean>]: boolean}
+	[Signals.setter<boolean>]: boolean
 }
 type RefQueue = {
 	[Ref]: {[IVirtual]: {[string|IDyna]: (Ref) -> unknown}}
@@ -67,9 +66,8 @@ const function learnFactory(props: Props, hydrationEffects: HydrationEffects): P
 
 	local hydrator = props[Recreate.hydrated]
 	if hydrator then
-		if not hydrationEffects.assigned[hydrator] then
-			table.insert(hydrationEffects.order, hydrator)
-			hydrationEffects.assigned[hydrator] = true
+		if not hydrationEffects[hydrator] then
+			hydrationEffects[hydrator] = true
 		end
 	end
 
@@ -129,9 +127,7 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 end
 
 const function doHydration(obj: IVirtual?, props): IVirtual
-	local hydrationEffects = {
-		order = {}, assigned = {}
-	}
+	local hydrationEffects: HydrationEffects = {}
 	local refQueue: RefQueue = {}
 	obj = hydrate(obj, props, nil, hydrationEffects, refQueue)
 
@@ -144,7 +140,7 @@ const function doHydration(obj: IVirtual?, props): IVirtual
 		end
 	end
 
-	for _, setter in hydrationEffects.order do setter(true) end
+	for setter in hydrationEffects do setter(true) end
 	return obj
 end
 
