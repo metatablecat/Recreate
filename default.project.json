@@ -1,6 +1,16 @@
 {
   "name": "Recreate",
   "tree": {
-    "$path": "src"
+    "$className": "Folder",
+
+		"Recreate": {
+			"$path": "src/Recreate.luau"
+		},
+		"Renderer": {
+			"$path": "src/interops/Roblox/Relayer.luau"
+		},
+		"Signals": {
+			"$path": "src/Signals"
+		}
   }
 }
