@@ -195,23 +195,6 @@ function RCI.findCreatedVirt(childIndex: IVirtual|string, parent: IVirtual): (IV
 	return nil, childIndex
 end
 
-function RCI.hydrate(virt: IVirtual, props, name: string?)
-	name = name or props.Name or virt.Name
-	props.Name = nil
-	
-	for propName: IDyna | string, propVal in props do
-		if type(propVal) == "table" and propVal.__rchydrate and type(propVal.getter) == "function" then
-			local getter = propVal.getter
-			setalloc(virt, "effect", Signals.createEffect(function(scope)
-				RCI.setValue(virt, propName, getter(scope))
-			end), true)
-			continue
-		end
-		
-		RCI.setValue(virt, propName, propVal)
-	end
-end
-
 function RCI.setParent(child: IVirtual, parent: IVirtual)
 	child.Parent = parent
 end

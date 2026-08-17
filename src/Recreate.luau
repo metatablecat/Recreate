@@ -28,8 +28,14 @@ export type HydrationDyna = {
 }
 
 export type HydrateEffectConsumer<T> = {
-	__rchydrate: true,
+	__rctag: "hydrationeffect",
 	getter: Signals.getter<T>
+}
+
+export type RefConsumer = {
+	__rctag: "refconsumer",
+	ref: Ref,
+	fn: (Ref) -> unknown
 }
 
 const Recreate = {}
@@ -47,6 +53,9 @@ type Props = {
 type HydrationEffects = {
 	order: {Signals.setter<boolean>},
 	assigned: {[Signals.setter<boolean>]: boolean}
+}
+type RefQueue = {
+	[Ref]: {[IVirtual]: {[string|IDyna]: (Ref) -> unknown}}
 }
 
 export type Component<T> = (T) -> () -> Props
@@ -67,7 +76,15 @@ const function learnFactory(props: Props, hydrationEffects: HydrationEffects): P
 	end
 end
 
-const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects): IVirtual
+const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any)
+	if type(propVal) == "table" and propVal.__rctag == "hydrationeffect" then
+			Recreate.setEffect(virt::IVirtual, propName, propVal)
+	else
+		RendererRCI.setValue(virt::IVirtual, propName, propVal)
+	end
+end
+
+const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects, rq: RefQueue): IVirtual
 	props = learnFactory(props, hydrationEffects)
 	
 	if not virt then
@@ -77,17 +94,58 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 	local ref: Ref? = props[Recreate.ref]
 	if ref then
 		props[Recreate.ref] = nil
-		ref.value = virt::Instance
+		ref.value = virt::IVirtual
 	end
 	
 	for childIndex, childProps in RendererRCI.children(props::any) do
-		local child, name = RendererRCI.findCreatedVirt(childIndex, virt::Instance)
-		local obj = hydrate(child, childProps, name, hydrationEffects)
-		RendererRCI.setParent(obj, virt::Instance)
+		local child, name = RendererRCI.findCreatedVirt(childIndex, virt::IVirtual)
+		local obj = hydrate(child, childProps, name, hydrationEffects, rq)
+		RendererRCI.setParent(obj, virt::IVirtual)
+	end
+
+	for propName: IDyna|string, propVal in props do
+		if type(propVal) == "table" and propVal.__rctag == "refconsumer" then
+			local aref: Ref = propVal.ref
+			local refslot = rq[aref]
+
+			if not refslot then
+				refslot = {}
+				rq[aref] = refslot
+			end
+
+			local objslot = refslot[virt::IVirtual]
+			if not objslot then
+				objslot = {}
+				refslot[virt::IVirtual] = objslot
+			end
+
+			objslot[propName] = propVal.fn
+		else
+			setPropertyDynamic(virt::IVirtual, propName, propVal)
+		end
 	end
 	
-	RendererRCI.hydrate(virt::Instance, props, objectName) -- hydration effects are computed once the whole tree is created to prevent side effects
-	return virt::Instance
+	return virt::IVirtual
+end
+
+const function doHydration(obj: IVirtual?, props): IVirtual
+	local hydrationEffects = {
+		order = {}, assigned = {}
+	}
+	local refQueue: RefQueue = {}
+	obj = hydrate(obj, props, nil, hydrationEffects, refQueue)
+
+	for ref, state in refQueue do
+		if not ref.value then continue end -- never allocated
+		for virt, objstate in state do
+			for propName, resolver in objstate do
+				setPropertyDynamic(virt, propName, resolver(ref))
+			end
+		end
+	end
+
+	for _, setter in hydrationEffects.order do setter(true) end
+	return obj
 end
 
 --[[
@@ -97,13 +155,7 @@ end
 ]]--
 function Recreate.create(props): IVirtual
 	-- make an empty object then hydrate as normal
-	local hydrationEffects = {
-		order = {}, assigned = {}
-	}
-	local obj = hydrate(nil, props, nil, hydrationEffects)
-	for _, setter in hydrationEffects.order do setter(true) end
-	
-	return obj
+	return doHydration(nil, props)
 end
 
 --[[
@@ -136,8 +188,16 @@ end
 ]]
 function Recreate.useEffect<T>(getter: Signals.getter<T>): HydrateEffectConsumer<T>
 	return {
-		__rchydrate = true,
+		__rctag = "hydrationeffect",
 		getter = getter
+	}
+end
+
+function Recreate.useRef(ref: Ref, getter: (Ref) -> unknown): RefConsumer
+	return {
+		__rctag = "refconsumer",
+		ref = ref,
+		fn = getter
 	}
 end
 
@@ -147,11 +207,7 @@ end
 	Refer to documentation on the layout of the `props` table
 ]]--
 function Recreate.hydrate(virt: IVirtual, props: Props)
-	local hydrationEffects = {
-		order = {}, assigned = {}
-	}
-	hydrate(virt, props, nil, hydrationEffects)
-	for _, setter in hydrationEffects.order do setter(true) end
+	doHydration(virt, props)
 end
 
 --[[
