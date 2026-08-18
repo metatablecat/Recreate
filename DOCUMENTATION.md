@@ -236,6 +236,104 @@ When Hydration is completed, any signals bound through `Recreate.Hydrated` will 
 
 ## 1. Installation
 
+> These packages are not live yet, please build it yourself for now.
+
 This package is hosted in two places, on the [Creator Store](), and on [GitHub](), these are stable releases which are determined to be ready for release. You can alternatively build the model file yourself using Rojo if you want the latest build, be aware, this will likely contain bugs.
 
-The package is provided as a Folder with three items
+The package is provided as a ModuleScript with the rendering and signal components stored inside the package. Relayer is stored as `Recreate.renderer`.
+
+You can load it with `require` in Studio. Its a good idea to put this module in `ReplicatedStorage`, since its commonly used for UI.
+
+## 2. Creating Roblox Objects
+
+This has been explained in detail in Recreate since this documentation targets Relayer.
+
+## 3. Children
+
+Children are assigned with the `Relayer.Children` `Dyna`, you pass a direct table with `name=props` pairs for each child instance.
+
+```luau
+local frame = Recreate.create {
+	ClassName = "Frame",
+	AutomaticSize = Enum.AutomaticSize.XY,
+
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+
+	[Relayer.Children] = {
+		Label = {
+			ClassName = "TextLabel",
+			AutomaticSize = Enum.AutomaticSize.XY,
+			BackgroundTransparency = 1,
+			Text = "I'm inside a frame!",
+			TextColor3 = Color3.new(0, 0, 0)
+		}
+	}
+}
+```
+
+You can also manipulate Children with a table using the `setValue` function on Recreate.
+
+```luau
+Recreate.setValue(frame, Relayer.Children, {
+	inst1, inst2
+})
+```
+
+This operation removes (sets Parent to `nil`, but does not destroy) any instances which may already be part of the Instance and replaces them with the ones provided in the table.
+
+## 4. Events and Change signals
+
+Events and change signals are controlled using the `EventDyna` and `ChangeDyna` respectively, these are constructors which describe *what* you want to connect to.
+
+For events, this will be an event name defined on the `Instance`, while for changing properties, it can be any property name.
+
+```luau
+local textbox = Recreate.create {
+	ClassName = "TextBox",
+	AutomaticSize = Enum.AutomaticSize.XY,
+	BackgroundTransparency = 1,
+	Text = "",
+	TextColor3 = Color3.new(0, 0, 0),
+	
+	[Relayer.Change "Text"] = function(sp, prop, newValue)
+
+	end
+
+	[Relayer.Event "FocusLost"] = function(sp, io, enterPressed)
+
+	end
+}
+```
+
+You can control if an event is bound this way by using `setValue`, and a `Dyna` with the same parameters, setting it to `nil` or another function will disconnect the existing event.
+
+## 5. Tags
+
+Tags are useful for StyleSheets, they are controlled similarly to children using `Relayer.Tags`, but should just be a table of StyleRules to bind against the instance.
+
+```luau
+local frame = Recreate.create {
+	[Relayer.Tags] = {
+		".main-content"
+	}
+
+	ClassName = "Frame",
+	AutomaticSize = Enum.AutomaticSize.XY,
+
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+
+	[Relayer.Children] = {
+		Label = {
+			ClassName = "TextLabel",
+			AutomaticSize = Enum.AutomaticSize.XY,
+			BackgroundTransparency = 1,
+			Text = "I'm inside a frame!",
+			TextColor3 = Color3.new(0, 0, 0)
+		}
+	}
+}
+```
