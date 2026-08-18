@@ -59,21 +59,6 @@ type RefQueue = {
 
 export type Component<T> = (T) -> () -> Props
 
-const function learnFactory(props: Props, hydrationEffects: HydrationEffects): Props
-	while type(props) == "function" do
-		props = (props::()->Props)()
-	end
-
-	local hydrator = props[Recreate.hydrated]
-	if hydrator then
-		if not hydrationEffects[hydrator] then
-			hydrationEffects[hydrator] = true
-		end
-	end
-
-	return props
-end
-
 const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any)
 	if type(propVal) == "table" and propVal.__rctag == "hydrationeffect" then
 			Recreate.setEffect(virt::IVirtual, propName, propVal.getter)
@@ -83,7 +68,12 @@ const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, prop
 end
 
 const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects, rq: RefQueue): IVirtual
-	props = learnFactory(props, hydrationEffects)
+	local hydrator = props[Recreate.hydrated]
+	if hydrator then
+		if not hydrationEffects[hydrator] then
+			hydrationEffects[hydrator] = true
+		end
+	end
 	
 	if not virt then
 		virt = RendererRCI.createVirtual(props)
