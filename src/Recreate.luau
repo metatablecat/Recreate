@@ -63,6 +63,30 @@ const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, prop
 	end
 end
 
+const function hydrateStep(virt: IVirtual, props: Props, rq: RefQueue)
+	for propName: IDyna|string, propVal in props do
+		if type(propVal) == "table" and propVal.__rctag == "refconsumer" then
+			local aref: Ref = propVal.ref
+			local refslot = rq[aref]
+
+			if not refslot then
+				refslot = {}
+				rq[aref] = refslot
+			end
+
+			local objslot = refslot[virt::IVirtual]
+			if not objslot then
+				objslot = {}
+				refslot[virt::IVirtual] = objslot
+			end
+
+			objslot[propName] = propVal.fn
+		else
+			setPropertyDynamic(virt::IVirtual, propName, propVal)
+		end
+	end
+end
+
 const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects, rq: RefQueue): IVirtual
 	local hydrator = props[Recreate.hydrated]
 	if hydrator then
@@ -87,28 +111,11 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 		RendererRCI.setParent(obj, virt::IVirtual)
 	end
 
-	for propName: IDyna|string, propVal in props do
-		if type(propVal) == "table" and propVal.__rctag == "refconsumer" then
-			local aref: Ref = propVal.ref
-			local refslot = rq[aref]
+	local lateHydration = RendererRCI.getLateAllocatedKeys(props)::Props
 
-			if not refslot then
-				refslot = {}
-				rq[aref] = refslot
-			end
+	hydrateStep(virt::IVirtual, props, rq)
+	hydrateStep(virt::IVirtual, lateHydration, rq)
 
-			local objslot = refslot[virt::IVirtual]
-			if not objslot then
-				objslot = {}
-				refslot[virt::IVirtual] = objslot
-			end
-
-			objslot[propName] = propVal.fn
-		else
-			setPropertyDynamic(virt::IVirtual, propName, propVal)
-		end
-	end
-	
 	return virt::IVirtual
 end
 

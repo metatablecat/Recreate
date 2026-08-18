@@ -153,6 +153,22 @@ const function statefree(item: Instance)
 end
 
 type MallocCategory = "event"|"change"|"effect"
+
+const function isalloc(item: Instance, category: MallocCategory, key: any)
+	local state = statemalloc(item)
+
+	if category == "event" then
+		return state.weak_storage.events[key]
+	elseif category == "change" then
+		return state.weak_storage.change[key]
+	elseif category == "effect" then
+		return state.effects[key]
+	end
+
+	return nil
+end
+
+
 const function setalloc(item: Instance, category: MallocCategory, key: any, value: any)
 	local state = statemalloc(item)
 	
@@ -230,38 +246,47 @@ end
 
 const function dynaSet(virt: IVirtual, prop: IDyna, value: any)
 	if prop.dynatag == "event" then
-		if value == nil then
+		local event = virt[prop.eventName]
+		if typeof(event) ~= "RBXScriptSignal" then error(`{prop.eventName} is not a bindable signal on {virt.ClassName}`) end
+
+		local allocated = isalloc(virt, "event", prop.eventName)
+		if allocated then
+			allocated:Disconnect()
 			setalloc(virt, "event", prop.eventName, nil)
-		else
-			local event = virt[prop.eventName]
-			if typeof(event) ~= "RBXScriptSignal" then error(`{prop.eventName} is not a bindable signal on {virt.ClassName}`) end
-
-			local sp = {
-				Sender = virt
-			}
-			sp.Connection = event:Connect(function(...)
-				value(sp, ...)
-			end)
-			table.freeze(sp)
-
-			setalloc(virt, "event", prop.eventName, sp.Connection)
 		end
+
+		if value == nil then return end
+
+		local sp = {
+			Sender = virt
+		}
+		sp.Connection = event:Connect(function(...)
+			value(sp, ...)
+		end)
+		table.freeze(sp)
+
+		setalloc(virt, "event", prop.eventName, sp.Connection)
 	elseif prop.dynatag == "changesignal" then
-		if value == nil then
-			setalloc(virt, "change", prop.propertyName, nil)
-		else
-			local propName = prop.propertyName
-			local event = virt:GetPropertyChangedSignal(propName)
-			local sp = {
-				Sender = virt
-			}
-			sp.Connection = event:Connect(function(...)
-				value(sp, propName, ...)
-			end)
-			table.freeze(sp)
+		local propName = prop.propertyName
+		local event = virt:GetPropertyChangedSignal(propName)
 
-			setalloc(virt, "change", propName, sp.Connection)
+		local allocated = isalloc(virt, "change", prop.propertyName)
+		if allocated then
+			allocated:Disconnect()
+			setalloc(virt, "change", prop.propertyName, nil)
 		end
+
+		if value == nil then return end
+
+		local sp = {
+			Sender = virt
+		}
+		sp.Connection = event:Connect(function()
+			value(sp, propName, virt[propName])
+		end)
+		table.freeze(sp)
+
+		setalloc(virt, "change", propName, sp.Connection)
 	elseif prop.dynatag == "tags" then
 		if type(value) ~= "table" then error("Invalid tags type") end
 		
@@ -287,6 +312,19 @@ const function dynaSet(virt: IVirtual, prop: IDyna, value: any)
 	else
 		error(`Unknown Dyna type {prop.key or prop}`)
 	end
+end
+
+function RCI.getLateAllocatedKeys(props): {[IDyna]: any}
+	local keys = {}
+	for key, value in props do
+		if type(key) == "table" then
+			if key.dynatag == "event" or key.dynatag == "changesignal" then
+				keys[key] = value
+				props[key] = nil
+			end
+		end
+	end
+	return keys
 end
 
 function RCI.setValue(virt: IVirtual, prop: string|IDyna, value: any)
