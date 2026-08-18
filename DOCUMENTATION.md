@@ -91,10 +91,10 @@ local frame = Recreate.create {
 
 ## 3. Components
 
-Components allow you make reusable templates that extend hydration. `Recreate.component` takes a function, then returns a function you can directly inline into your calls by calling it.
+Components allow you make reusable templates that extend hydration. You can define any function that retuns a table, you can then directly inline into your trees by calling it.
 
 ```luau
-return Recreate.component(padding: UDim?)
+return function(padding: UDim?)
 	padding = padding or UDim.new()
 
 	-- Do not use Recreate.create here as this gets inlined inside your props table
@@ -199,7 +199,7 @@ To prevent side effects, refs should only be allocated once. Refs are more usefu
 
 Recreate uses the `Roblox/Signals` library to provide reactive state, for information on how to use that library, click [here](https://github.com/Roblox/signals).
 
-To use a Signal in Recreate, you can directly bind it as an effect to a hydration table using `useEffect`. This is done to descriminate between an effect a function the renderer may want to consume.
+To use a Signal in Recreate, you can directly bind it as an effect to a hydration table using `useEffect`. This is done to discriminate between an effect a function the renderer may want to consume.
 
 ```luau
 local get, set = Signals.createSignal(Lighting.TimeOfDay)

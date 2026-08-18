@@ -207,24 +207,6 @@ function Recreate.hydrate(virt: IVirtual, props: Props)
 end
 
 --[[
-	Defines a `Component` factory that can be used in `create` and `hydrate` to create new
-	`IVirtual`s
-
-	Params:
-	* `fn: (T) -> Props` - the generator function to use
-
-	Returns
-	* `(T) -> () -> Props` - a factory to generate components
-]]--
-function Recreate.component<T>(fn: (T) -> Props): (T) -> () -> Props
-	return function(capture: T)
-		return function()
-			return fn(capture)
-		end
-	end
-end
-
---[[
 	Sets a value for the given property name or `Dyna`.
 
 	Refer to renderer impl for layout of this call
