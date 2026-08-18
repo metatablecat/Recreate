@@ -2,6 +2,8 @@
 --!strict
 --!optimize 2
 
+const USE_TEST_RENDERING = _G.USE_TEST_RENDERING or false
+
 const Renderer = require(script.Parent.Renderer)
 const RendererRCI = Renderer.__RCImplementor
 if not RendererRCI then
@@ -17,9 +19,6 @@ export type Ref = {
 	value: IVirtual
 }
 
-export type FactoryDyna = {
-	read k: "factory"
-}
 export type RefDyna = {
 	read k: "ref"
 }
@@ -40,11 +39,10 @@ export type RefConsumer = {
 
 const Recreate = {}
 
-Recreate.factory = {k = "factory"}::FactoryDyna; table.freeze(Recreate.factory)
 Recreate.ref = {k = "ref"}::RefDyna; table.freeze(Recreate.ref)
 Recreate.hydrated = {k = "hydrated"}::HydrationDyna; table.freeze(Recreate.hydrated)
 
-export type BuiltInDyna = FactoryDyna | RefDyna | HydrationDyna
+export type BuiltInDyna = RefDyna | HydrationDyna
 
 type Props = {
 	[string | BuiltInDyna | IDyna]: any
@@ -56,8 +54,6 @@ type HydrationEffects = {
 type RefQueue = {
 	[Ref]: {[IVirtual]: {[string|IDyna]: (Ref) -> unknown}}
 }
-
-export type Component<T> = (T) -> () -> Props
 
 const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any)
 	if type(propVal) == "table" and propVal.__rctag == "hydrationeffect" then
