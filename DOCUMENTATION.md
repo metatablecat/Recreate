@@ -238,7 +238,7 @@ When Hydration is completed, any signals bound through `Recreate.Hydrated` will 
 
 > These packages are not live yet, please build it yourself for now.
 
-This package is hosted in two places, on the [Creator Store](), and on [GitHub](), these are stable releases which are determined to be ready for release. You can alternatively build the model file yourself using Rojo if you want the latest build, be aware, this will likely contain bugs.
+This package is hosted in two places, on the [Creator Store](https://create.roblox.com/store/asset/97554899505380/Recreate), and on [GitHub](https://github.com/metatablecat/Recreate/releases), these are stable releases which are determined to be ready for release. You can alternatively build the model file yourself using Rojo if you want the latest build, be aware, this will likely contain bugs.
 
 The package is provided as a ModuleScript with the rendering and signal components stored inside the package. Relayer is stored as `Recreate.renderer`.
 
