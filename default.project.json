@@ -1,13 +1,10 @@
 {
   "name": "Recreate",
   "tree": {
-		"$path": "src/interops/Roblox/InteropsHeader.luau",
+		"$path": "src/Recreate.luau",
 
-		"Recreate": {
-			"$path": "src/Recreate.luau"
-		},
 		"Renderer": {
-			"$path": "src/interops/Roblox/Relayer.luau"
+		"$path": "src/interops/Roblox/Relayer.luau"
 		},
 		"Signals": {
 			"$path": "src/Signals"

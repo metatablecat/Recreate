@@ -234,4 +234,8 @@ When Hydration is completed, any signals bound through `Recreate.Hydrated` will 
 
 # 2. Relayer and Roblox
 
-TODO
+## 1. Installation
+
+This package is hosted in two places, on the [Creator Store](), and on [GitHub](), these are stable releases which are determined to be ready for release. You can alternatively build the model file yourself using Rojo if you want the latest build, be aware, this will likely contain bugs.
+
+The package is provided as a Folder with three items

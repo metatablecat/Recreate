@@ -4,16 +4,16 @@
 
 const USE_TEST_RENDERING = _G.USE_TEST_RENDERING or false
 
-const Renderer = require(script.Parent.Renderer)
+const Renderer = require(script.Renderer)
 const RendererRCI = Renderer.__RCImplementor
 if not RendererRCI then
 	error("Recreate is not linked to a renderer")
 end
 
-const Signals = require(script.Parent.Signals)
+const Signals = require(script.Signals)
 
-type IVirtual = Renderer.IVirtual
-type IDyna = Renderer.IDyna
+export type IVirtual = Renderer.IVirtual
+export type IDyna = Renderer.IDyna
 
 export type Ref = {
 	value: IVirtual
@@ -209,6 +209,8 @@ end
 	Refer to renderer impl for layout of this call
 ]]--
 Recreate.setValue = RendererRCI.setValue
+Recreate.renderer = Renderer
+Recreate.signals = Signals
 
 table.freeze(Recreate)
 return Recreate
