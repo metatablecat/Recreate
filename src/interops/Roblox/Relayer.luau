@@ -57,6 +57,15 @@ const dynamutables = {
 	change = setmetatable({}, {__mode = "v"}),
 }
 
+const function tokeys<T>(t: {[any]: T}): {[T]: true}
+	local keys = {}
+	for _, k in t do
+		keys[k] = true
+	end
+
+	return keys
+end
+
 --[[
 	A `Dyna` which directs Relayer to handle children of an `Instance`.
 ]]--
@@ -199,8 +208,8 @@ function RCI.setParent(child: IVirtual, parent: IVirtual)
 	child.Parent = parent
 end
 
-const function compare<T>(values: {T}, changed: {[T]: any}): ({T}, {T})
-	changed = table.clone(changed)
+const function compare<T>(values: {T}, changed: {T}): ({T}, {T})
+	changed = tokeys(changed)
 	
 	local added, removed = {}, {}
 	
