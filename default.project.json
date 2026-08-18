@@ -1,7 +1,7 @@
 {
   "name": "Recreate",
   "tree": {
-    "$className": "Folder",
+		"$path": "src/interops/Roblox/InteropsHeader.luau",
 
 		"Recreate": {
 			"$path": "src/Recreate.luau"
@@ -12,5 +12,5 @@
 		"Signals": {
 			"$path": "src/Signals"
 		}
-  }
+	}
 }

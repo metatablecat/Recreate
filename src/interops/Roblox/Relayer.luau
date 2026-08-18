@@ -270,7 +270,7 @@ const function dynaSet(virt: IVirtual, prop: IDyna, value: any)
 		local add, remove = compare(virt:GetChildren(), value)
 		
 		for _, child in remove do
-			child:Destroy()
+			child.Parent = nil
 		end
 		for _, child in add do
 			child.Parent = virt
