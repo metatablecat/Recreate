@@ -181,7 +181,7 @@ end
 
 	Returns:
 	* `HydrateEffectConsumer` - an effect consumer for `Hydrate` to use
-]]
+]]--
 function Recreate.useEffect<T>(getter: Signals.getter<T>): HydrateEffectConsumer<T>
 	return {
 		__rctag = "hydrationeffect",
@@ -189,11 +189,22 @@ function Recreate.useEffect<T>(getter: Signals.getter<T>): HydrateEffectConsumer
 	}
 end
 
-function Recreate.useRef(ref: Ref, getter: (Ref) -> unknown): RefConsumer
+--[[
+	Adds a callback that fires when a Ref is resolved. You can return a value
+	or a `HydrationEffectConsumer` returned by `useEffect`.
+
+	Params:
+	* `ref`: Ref` - The Ref to connect to
+	* `fn`: (Ref) -> unknown` - The callback that should return a new value
+
+	Returns:
+	* `RefConsumer` - a Ref consumer for `Hydrate` to use
+]]--
+function Recreate.useRef(ref: Ref, fn: (Ref) -> unknown): RefConsumer
 	return {
 		__rctag = "refconsumer",
 		ref = ref,
-		fn = getter
+		fn = fn
 	}
 end
 
