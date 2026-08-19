@@ -314,17 +314,13 @@ const function dynaSet(virt: IVirtual, prop: IDyna, value: any)
 	end
 end
 
-function RCI.getLateAllocatedKeys(props): {[IDyna]: any}
-	local keys = {}
-	for key, value in props do
-		if type(key) == "table" then
-			if key.dynatag == "event" or key.dynatag == "changesignal" then
-				keys[key] = value
-				props[key] = nil
-			end
+function RCI.isLateAllocatedKey(key: IDyna|string): boolean
+	if type(key) == "table" then
+		if key.dynatag == "event" or key.dynatag == "changesignal" then
+			return true
 		end
 	end
-	return keys
+	return false
 end
 
 function RCI.setValue(virt: IVirtual, prop: string|IDyna, value: any)
