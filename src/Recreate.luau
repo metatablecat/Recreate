@@ -54,6 +54,16 @@ type HydrationEffects = {
 type RefQueue = {
 	[Ref]: {[IVirtual]: {[string|IDyna]: (Ref) -> unknown}}
 }
+type LateResolutionQueue = {
+	[IVirtual]: {
+		[IDyna|string]: unknown
+	}
+}
+type QueueCtx = {
+	hydration: HydrationEffects,
+	refs: RefQueue,
+	lateResolution: LateResolutionQueue
+}
 
 const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any)
 	if type(propVal) == "table" and propVal.__rctag == "hydrationeffect" then
@@ -63,15 +73,25 @@ const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, prop
 	end
 end
 
-const function hydrateStep(virt: IVirtual, props: Props, rq: RefQueue)
+const function allocLateKey(virt: IVirtual, prop: IDyna|string, val: any, queue: LateResolutionQueue)
+	local lateallocslot = queue[virt]
+		if not lateallocslot then
+			lateallocslot = {}
+			queue[virt] = lateallocslot
+		end
+
+		lateallocslot[prop] = val
+end
+
+const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx)
 	for propName: IDyna|string, propVal in props do
 		if type(propVal) == "table" and propVal.__rctag == "refconsumer" then
 			local aref: Ref = propVal.ref
-			local refslot = rq[aref]
+			local refslot = queue.refs[aref]
 
 			if not refslot then
 				refslot = {}
-				rq[aref] = refslot
+				queue.refs[aref] = refslot
 			end
 
 			local objslot = refslot[virt::IVirtual]
@@ -81,13 +101,15 @@ const function hydrateStep(virt: IVirtual, props: Props, rq: RefQueue)
 			end
 
 			objslot[propName] = propVal.fn
+		elseif RendererRCI.isLateAllocatedKey(propName) then
+			allocLateKey(virt, propName, propVal, queue.lateResolution)
 		else
 			setPropertyDynamic(virt::IVirtual, propName, propVal)
 		end
 	end
 end
 
-const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects, rq: RefQueue): IVirtual
+const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects, queue: QueueCtx): IVirtual
 	local hydrator = props[Recreate.hydrated]
 	if hydrator then
 		if not hydrationEffects[hydrator] then
@@ -104,32 +126,60 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 		props[Recreate.ref] = nil
 		ref.value = virt::IVirtual
 	end
-	
-	for childIndex, childProps in RendererRCI.children(props::any) do
-		local child, name = RendererRCI.findCreatedVirt(childIndex, virt::IVirtual)
-		local obj = hydrate(child, childProps, name, hydrationEffects, rq)
-		RendererRCI.setParent(obj, virt::IVirtual)
+
+	local children: {[any]: any} = props[RendererRCI.childrenDyna]
+	if children then
+		props[RendererRCI.childrenDyna] = nil
+
+		if type(children) == "table" then
+			if children.__rctag == "hydrationeffect" then
+				Recreate.setEffect(virt::Instance, RendererRCI.childrenDyna, children.getter)
+			elseif children.__rctag == "refconsumer" then
+				error("Children key cannot be connected to useRef.")
+			else
+				for childIndex, childProps in children do
+					local child, name = RendererRCI.findCreatedVirt(childIndex, virt::IVirtual)
+					local obj = hydrate(child, childProps, name, hydrationEffects, queue)
+					RendererRCI.setParent(obj, virt::IVirtual)
+				end
+			end
+		else
+			error("Invalid type for Children, should be a table")
+		end
 	end
 
-	local lateHydration = RendererRCI.getLateAllocatedKeys(props)::Props
-
-	hydrateStep(virt::IVirtual, props, rq)
-	hydrateStep(virt::IVirtual, lateHydration, rq)
-
+	hydrateStep(virt::IVirtual, props, queue)
 	return virt::IVirtual
 end
 
 const function doHydration(obj: IVirtual?, props): IVirtual
 	local hydrationEffects: HydrationEffects = {}
 	local refQueue: RefQueue = {}
-	obj = hydrate(obj, props, nil, hydrationEffects, refQueue)
+	local lateAllocQueue: LateResolutionQueue = {}
+	local queue: QueueCtx = {
+		hydration = hydrationEffects,
+		refs = refQueue,
+		lateResolution = lateAllocQueue
+	}
+
+	obj = hydrate(obj, props, nil, hydrationEffects, queue)
 
 	for ref, state in refQueue do
 		if not ref.value then continue end -- never allocated
 		for virt, objstate in state do
 			for propName, resolver in objstate do
-				setPropertyDynamic(virt, propName, resolver(ref))
+				if RendererRCI.isLateAllocatedKey(propName) then
+					allocLateKey(virt, propName, resolver(ref), lateAllocQueue)
+				else
+					setPropertyDynamic(virt, propName, resolver(ref))
+				end
 			end
+		end
+	end
+
+	for virt, state in lateAllocQueue do
+		for idyna, propVal in state do
+			setPropertyDynamic(virt, idyna, propVal)
 		end
 	end
 
