@@ -89,6 +89,20 @@ local frame = Recreate.create {
 }
 ```
 
+### Hydration Order
+
+Hydration is completed in a well-defined order, which is given below
+
+1. For each object,
+	1. Bind `Hydrate` effect
+	2. Resolve children
+	3. Set props which are not considered "late" keys
+2. Resolve refs
+	* "late" keys are still defered
+3. Bind "late" keys
+4. Set `Hydrate` effects to true
+
+
 ## 3. Components
 
 Components allow you make reusable templates that extend hydration. You can define any function that retuns a table, you can then directly inline into your trees by calling it.
@@ -193,7 +207,7 @@ local frame = Recreate.create {
 
 > The exact order in which useRef is resolved is undefined and should not be depended upon.
 
-To prevent side effects, refs should only be allocated once. Refs are more useful in event-based code, so this example does not demonstrate their usecase fully.
+To prevent side effects, refs should only be allocated once. Refs are more useful in event-based code, so this example does not demonstrate their usecase fully. Children cannot be connected to `useRef`.
 
 ## 5. Effects with Roblox Signals
 
