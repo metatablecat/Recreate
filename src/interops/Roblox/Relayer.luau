@@ -70,6 +70,7 @@ end
 	A `Dyna` which directs Relayer to handle children of an `Instance`.
 ]]--
 Relayer.Children = {dynatag = "children"}::DynaChildren; table.freeze(Relayer.Children)
+RCI.childrenDyna = Relayer.Children
 --[[
 	A `Dyna` which directs Relayer to handle tags of an `Instance`.
 ]]--
@@ -197,15 +198,6 @@ function RCI.createVirtual(props): Instance
 	end)
 	
 	return obj
-end
-
-function RCI.children(props): ({[string|IVirtual]: {[any]: any}}, DynaChildren)
-	local children = props[Relayer.Children]
-	if children then
-		props[Relayer.Children] = nil
-		return children, Relayer.Children
-	end
-	return {}, Relayer.Children
 end
 
 function RCI.findCreatedVirt(childIndex: IVirtual|string, parent: IVirtual): (IVirtual?, string)

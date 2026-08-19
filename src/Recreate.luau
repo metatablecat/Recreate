@@ -127,11 +127,13 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 		ref.value = virt::IVirtual
 	end
 
-	local children: {[any]: any}, childrenKey = RendererRCI.children(props::any)
-	if children ~= nil then
+	local children: {[any]: any} = props[RendererRCI.childrenDyna]
+	if children then
+		props[RendererRCI.childrenDyna] = nil
+
 		if type(children) == "table" then
 			if children.__rctag == "hydrationeffect" then
-				Recreate.setEffect(virt::Instance, childrenKey, children.getter)
+				Recreate.setEffect(virt::Instance, RendererRCI.childrenDyna, children.getter)
 			elseif children.__rctag == "refconsumer" then
 				error("Children key cannot be connected to useRef.")
 			else
