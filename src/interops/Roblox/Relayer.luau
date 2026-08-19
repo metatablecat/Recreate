@@ -199,13 +199,13 @@ function RCI.createVirtual(props): Instance
 	return obj
 end
 
-function RCI.children(props): {[string|IVirtual]: {[any]: any}}
+function RCI.children(props): ({[string|IVirtual]: {[any]: any}}, DynaChildren)
 	local children = props[Relayer.Children]
 	if children then
 		props[Relayer.Children] = nil
-		return children
+		return children, Relayer.Children
 	end
-	return {}
+	return {}, Relayer.Children
 end
 
 function RCI.findCreatedVirt(childIndex: IVirtual|string, parent: IVirtual): (IVirtual?, string)

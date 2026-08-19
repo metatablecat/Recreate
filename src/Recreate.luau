@@ -127,22 +127,22 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 		ref.value = virt::IVirtual
 	end
 
-	local children: {[any]: any} = RendererRCI.children(props::any)
+	local children: {[any]: any}, childrenKey = RendererRCI.children(props::any)
 	if children ~= nil then
 		if type(children) == "table" then
 			if children.__rctag == "hydrationeffect" then
-				children = children.getter()
+				Recreate.setEffect(virt::Instance, childrenKey, children.getter)
 			elseif children.__rctag == "refconsumer" then
 				error("Children key cannot be connected to useRef.")
+			else
+				for childIndex, childProps in children do
+					local child, name = RendererRCI.findCreatedVirt(childIndex, virt::IVirtual)
+					local obj = hydrate(child, childProps, name, hydrationEffects, queue)
+					RendererRCI.setParent(obj, virt::IVirtual)
+				end
 			end
 		else
 			error("Invalid type for Children, should be a table")
-		end
-		
-		for childIndex, childProps in children do
-			local child, name = RendererRCI.findCreatedVirt(childIndex, virt::IVirtual)
-			local obj = hydrate(child, childProps, name, hydrationEffects, queue)
-			RendererRCI.setParent(obj, virt::IVirtual)
 		end
 	end
 
