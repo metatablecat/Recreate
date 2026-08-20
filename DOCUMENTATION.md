@@ -13,7 +13,7 @@ This document outlines how to use the Recreate library
 	4. Refs
 	5. Effects with Roblox Signals
 	6. Hydration
-	7. Supression
+	7. Suppression
 2. Relayer and Roblox
 	1. Installation
 	2. Creating Roblox objects
@@ -247,9 +247,9 @@ Hydration works almost identically to `create`, except that it works on objects 
 
 When Hydration is completed, any signals bound through `Recreate.Hydrated` will be set to true. The order of hydration, much like refs, is undefined.
 
-## 7. Supression
+## 7. Suppression
 
-Sometimes, it's useful to render an object, but supress its reactive logic, `Recreate.supressed` exists to allow you to do this, you can define it anywhere in your tree to supress that object and it's children. Supression disables reactive keys and effects.
+Sometimes, it's useful to render an object, but suppress its reactive logic, `Recreate.suppressed` exists to allow you to do this, you can define it anywhere in your tree to suppress that object and it's children. Suppression disables reactive keys and effects.
 
 ```luau
 Recreate.create {
@@ -261,7 +261,7 @@ Recreate.create {
 	
 	[Recreate.renderer.Children] = {
 		{
-			[Recreate.supressed] = true,
+			[Recreate.suppressed] = true,
 			ClassName = "TextButton",
 			Text = "Hello world!",
 			Size = UDim2.new(1, 0, 1, 0),
