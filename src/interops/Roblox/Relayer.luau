@@ -308,7 +308,7 @@ const function dynaSet(virt: IVirtual, prop: IDyna, value: any, supressed: boole
 	end
 end
 
-function RCI.isLateAllocatedKey(key: IDyna|string): boolean
+function RCI.isReactiveKey(key: IDyna|string): boolean
 	if type(key) == "table" then
 		if key.dynatag == "event" or key.dynatag == "changesignal" then
 			return true
