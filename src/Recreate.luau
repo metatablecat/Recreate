@@ -91,7 +91,7 @@ end
 const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx, supressed: boolean)
 	for propName: IDyna|string, propVal in props do
 		if type(propVal) == "table" and propVal.__rctag == "refconsumer" then
-			if supressed then return end
+			if supressed then continue end
 			local aref: Ref = propVal.ref
 			local refslot = queue.refs[aref]
 
@@ -108,6 +108,7 @@ const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx, supres
 
 			objslot[propName] = propVal.fn
 		elseif RendererRCI.isLateAllocatedKey(propName) then
+			if supressed then continue end
 			allocLateKey(virt, propName, propVal, queue.lateResolution)
 		else
 			setPropertyDynamic(virt::IVirtual, propName, propVal, supressed)
@@ -125,10 +126,7 @@ const function hydrate(
 ): IVirtual
 	if not supression then
 		-- should we start supressing now?
-		local flag = props[Recreate.supressed]
-		if flag then
-			supression = true
-		end
+		supression = props[Recreate.supressed] == true
 	end
 	props[Recreate.supressed] = nil
 
