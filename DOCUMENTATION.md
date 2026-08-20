@@ -96,10 +96,10 @@ Hydration is completed in a well-defined order, which is given below
 1. For each object,
 	1. Bind `Hydrate` effect
 	2. Resolve children
-	3. Set props which are not considered "late" keys
+	3. Set props which are not considered reactive keys
 2. Resolve refs
-	* "late" keys are still defered
-3. Bind "late" keys
+	* reactive keys are still defered
+3. Bind reactive keys
 4. Set `Hydrate` effects to true
 
 

@@ -58,7 +58,7 @@ type HydrationEffects = {
 type RefQueue = {
 	[Ref]: {[IVirtual]: {[string|IDyna]: (Ref) -> unknown}}
 }
-type LateResolutionQueue = {
+type ReactiveQueue = {
 	[IVirtual]: {
 		[IDyna|string]: unknown
 	}
@@ -66,7 +66,7 @@ type LateResolutionQueue = {
 type QueueCtx = {
 	hydration: HydrationEffects,
 	refs: RefQueue,
-	lateResolution: LateResolutionQueue
+	reactive: ReactiveQueue
 }
 
 const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any, supressed: boolean)
@@ -78,14 +78,14 @@ const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, prop
 	end
 end
 
-const function allocLateKey(virt: IVirtual, prop: IDyna|string, val: any, queue: LateResolutionQueue)
-	local lateallocslot = queue[virt]
-		if not lateallocslot then
-			lateallocslot = {}
-			queue[virt] = lateallocslot
+const function allocLateKey(virt: IVirtual, prop: IDyna|string, val: any, queue: ReactiveQueue)
+	local reactiveslot = queue[virt]
+		if not reactiveslot then
+			reactiveslot = {}
+			queue[virt] = reactiveslot
 		end
 
-		lateallocslot[prop] = val
+		reactiveslot[prop] = val
 end
 
 const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx, supressed: boolean)
@@ -107,9 +107,9 @@ const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx, supres
 			end
 
 			objslot[propName] = propVal.fn
-		elseif RendererRCI.isLateAllocatedKey(propName) then
+		elseif RendererRCI.isReactiveKey(propName) then
 			if supressed then continue end
-			allocLateKey(virt, propName, propVal, queue.lateResolution)
+			allocLateKey(virt, propName, propVal, queue.reactive)
 		else
 			setPropertyDynamic(virt::IVirtual, propName, propVal, supressed)
 		end
@@ -179,11 +179,11 @@ end
 const function doHydration(obj: IVirtual?, props: Props): IVirtual
 	local hydrationEffects: HydrationEffects = {}
 	local refQueue: RefQueue = {}
-	local lateAllocQueue: LateResolutionQueue = {}
+	local reactiveQueue: ReactiveQueue = {}
 	local queue: QueueCtx = {
 		hydration = hydrationEffects,
 		refs = refQueue,
-		lateResolution = lateAllocQueue
+		reactive = reactiveQueue
 	}
 
 	local supressionMode = props[Recreate.supressed] == true
@@ -193,8 +193,8 @@ const function doHydration(obj: IVirtual?, props: Props): IVirtual
 		if not ref.value then continue end -- never allocated
 		for virt, objstate in state do
 			for propName, resolver in objstate do
-				if RendererRCI.isLateAllocatedKey(propName) then
-					allocLateKey(virt, propName, resolver(ref), lateAllocQueue)
+				if RendererRCI.isReactiveKey(propName) then
+					allocLateKey(virt, propName, resolver(ref), reactiveQueue)
 				else
 					setPropertyDynamic(virt, propName, resolver(ref), supressionMode)
 				end
@@ -202,7 +202,7 @@ const function doHydration(obj: IVirtual?, props: Props): IVirtual
 		end
 	end
 
-	for virt, state in lateAllocQueue do
+	for virt, state in reactiveQueue do
 		for idyna, propVal in state do
 			setPropertyDynamic(virt, idyna, propVal, supressionMode)
 		end
