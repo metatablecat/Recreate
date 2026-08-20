@@ -236,8 +236,9 @@ const function compare<T>(values: {T}, changed: {T}): ({T}, {T})
 	return added, removed
 end
 
-const function dynaSet(virt: IVirtual, prop: IDyna, value: any)
+const function dynaSet(virt: IVirtual, prop: IDyna, value: any, supressed: boolean)
 	if prop.dynatag == "event" then
+		if supressed then return end
 		local event = virt[prop.eventName]
 		if typeof(event) ~= "RBXScriptSignal" then error(`{prop.eventName} is not a bindable signal on {virt.ClassName}`) end
 
@@ -259,6 +260,7 @@ const function dynaSet(virt: IVirtual, prop: IDyna, value: any)
 
 		setalloc(virt, "event", prop.eventName, sp.Connection)
 	elseif prop.dynatag == "changesignal" then
+		if supressed then return end
 		local propName = prop.propertyName
 		local event = virt:GetPropertyChangedSignal(propName)
 
@@ -315,9 +317,9 @@ function RCI.isLateAllocatedKey(key: IDyna|string): boolean
 	return false
 end
 
-function RCI.setValue(virt: IVirtual, prop: string|IDyna, value: any)
+function RCI.setValue(virt: IVirtual, prop: string|IDyna, value: any, supressed: boolean)
 	if type(prop) == "table" then
-		dynaSet(virt, prop, value)
+		dynaSet(virt, prop, value, supressed)
 	else
 		virt[prop] = value
 	end	

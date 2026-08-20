@@ -25,6 +25,9 @@ export type RefDyna = {
 export type HydrationDyna = {
 	read k: "hydrated"
 }
+export type SupressedDyna = {
+	read k: "supressed"
+}
 
 export type HydrateEffectConsumer<T> = {
 	__rctag: "hydrationeffect",
@@ -41,8 +44,9 @@ const Recreate = {}
 
 Recreate.ref = {k = "ref"}::RefDyna; table.freeze(Recreate.ref)
 Recreate.hydrated = {k = "hydrated"}::HydrationDyna; table.freeze(Recreate.hydrated)
+Recreate.supressed = {k = "supressed"}::SupressedDyna; table.freeze(Recreate.supressed)
 
-export type BuiltInDyna = RefDyna | HydrationDyna
+export type BuiltInDyna = RefDyna | HydrationDyna | SupressedDyna
 
 type Props = {
 	[string | BuiltInDyna | IDyna]: any
@@ -65,11 +69,12 @@ type QueueCtx = {
 	lateResolution: LateResolutionQueue
 }
 
-const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any)
+const function setPropertyDynamic(virt: IVirtual, propName: string | IDyna, propVal: any, supressed: boolean)
 	if type(propVal) == "table" and propVal.__rctag == "hydrationeffect" then
-			Recreate.setEffect(virt::IVirtual, propName, propVal.getter)
+		if supressed then return end
+		Recreate.setEffect(virt::IVirtual, propName, propVal.getter)
 	else
-		RendererRCI.setValue(virt::IVirtual, propName, propVal)
+		RendererRCI.setValue(virt::IVirtual, propName, propVal, supressed)
 	end
 end
 
@@ -83,9 +88,10 @@ const function allocLateKey(virt: IVirtual, prop: IDyna|string, val: any, queue:
 		lateallocslot[prop] = val
 end
 
-const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx)
+const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx, supressed: boolean)
 	for propName: IDyna|string, propVal in props do
 		if type(propVal) == "table" and propVal.__rctag == "refconsumer" then
+			if supressed then return end
 			local aref: Ref = propVal.ref
 			local refslot = queue.refs[aref]
 
@@ -104,16 +110,34 @@ const function hydrateStep(virt: IVirtual, props: Props, queue: QueueCtx)
 		elseif RendererRCI.isLateAllocatedKey(propName) then
 			allocLateKey(virt, propName, propVal, queue.lateResolution)
 		else
-			setPropertyDynamic(virt::IVirtual, propName, propVal)
+			setPropertyDynamic(virt::IVirtual, propName, propVal, supressed)
 		end
 	end
 end
 
-const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydrationEffects: HydrationEffects, queue: QueueCtx): IVirtual
-	local hydrator = props[Recreate.hydrated]
-	if hydrator then
-		if not hydrationEffects[hydrator] then
-			hydrationEffects[hydrator] = true
+const function hydrate(
+	virt: IVirtual?,
+	props: Props,
+	objectName: string?,
+	hydrationEffects: HydrationEffects,
+	queue: QueueCtx,
+	supression: boolean
+): IVirtual
+	if not supression then
+		-- should we start supressing now?
+		local flag = props[Recreate.supressed]
+		if flag then
+			supression = true
+		end
+	end
+	props[Recreate.supressed] = nil
+
+	if not supression then
+		local hydrator = props[Recreate.hydrated]
+		if hydrator then
+			if not hydrationEffects[hydrator] then
+				hydrationEffects[hydrator] = true
+			end
 		end
 	end
 	
@@ -133,13 +157,15 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 
 		if type(children) == "table" then
 			if children.__rctag == "hydrationeffect" then
-				Recreate.setEffect(virt::Instance, RendererRCI.childrenDyna, children.getter)
+				if not supression then
+					Recreate.setEffect(virt::Instance, RendererRCI.childrenDyna, children.getter)
+				end
 			elseif children.__rctag == "refconsumer" then
 				error("Children key cannot be connected to useRef.")
 			else
 				for childIndex, childProps in children do
 					local child, name = RendererRCI.findCreatedVirt(childIndex, virt::IVirtual)
-					local obj = hydrate(child, childProps, name, hydrationEffects, queue)
+					local obj = hydrate(child, childProps, name, hydrationEffects, queue, supression)
 					RendererRCI.setParent(obj, virt::IVirtual)
 				end
 			end
@@ -148,11 +174,11 @@ const function hydrate(virt: IVirtual?, props: Props, objectName: string?, hydra
 		end
 	end
 
-	hydrateStep(virt::IVirtual, props, queue)
+	hydrateStep(virt::IVirtual, props, queue, supression)
 	return virt::IVirtual
 end
 
-const function doHydration(obj: IVirtual?, props): IVirtual
+const function doHydration(obj: IVirtual?, props: Props): IVirtual
 	local hydrationEffects: HydrationEffects = {}
 	local refQueue: RefQueue = {}
 	local lateAllocQueue: LateResolutionQueue = {}
@@ -162,7 +188,8 @@ const function doHydration(obj: IVirtual?, props): IVirtual
 		lateResolution = lateAllocQueue
 	}
 
-	obj = hydrate(obj, props, nil, hydrationEffects, queue)
+	local supressionMode = props[Recreate.supressed] == true
+	obj = hydrate(obj, props, nil, hydrationEffects, queue, supressionMode)
 
 	for ref, state in refQueue do
 		if not ref.value then continue end -- never allocated
@@ -171,7 +198,7 @@ const function doHydration(obj: IVirtual?, props): IVirtual
 				if RendererRCI.isLateAllocatedKey(propName) then
 					allocLateKey(virt, propName, resolver(ref), lateAllocQueue)
 				else
-					setPropertyDynamic(virt, propName, resolver(ref))
+					setPropertyDynamic(virt, propName, resolver(ref), supressionMode)
 				end
 			end
 		end
@@ -179,7 +206,7 @@ const function doHydration(obj: IVirtual?, props): IVirtual
 
 	for virt, state in lateAllocQueue do
 		for idyna, propVal in state do
-			setPropertyDynamic(virt, idyna, propVal)
+			setPropertyDynamic(virt, idyna, propVal, supressionMode)
 		end
 	end
 
@@ -210,7 +237,7 @@ end
 ]]--
 function Recreate.setEffect<T>(virt: IVirtual, prop: string|IDyna, getter: Signals.getter<T>): Signals.dispose
 	local dispose = Signals.createEffect(function(scope)
-		RendererRCI.setValue(virt, prop, getter(scope))
+		RendererRCI.setValue(virt, prop, getter(scope), false)
 	end)
 	return RendererRCI.effectAllocate(virt, dispose)
 end
