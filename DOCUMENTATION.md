@@ -13,6 +13,7 @@ This document outlines how to use the Recreate library
 	4. Refs
 	5. Effects with Roblox Signals
 	6. Hydration
+	7. Supression
 2. Relayer and Roblox
 	1. Installation
 	2. Creating Roblox objects
@@ -245,6 +246,43 @@ You can return a `useEffect` from within `useRef` if the usecase suffices.
 Hydration works almost identically to `create`, except that it works on objects already created. This is useful if you want to bind something that cant otherwise be created directly, ie, for Roblox, a `DockWidgetPluginGui`
 
 When Hydration is completed, any signals bound through `Recreate.Hydrated` will be set to true. The order of hydration, much like refs, is undefined.
+
+## 7. Supression
+
+Sometimes, it's useful to render an object, but supress its reactive logic, `Recreate.supressed` exists to allow you to do this, you can define it anywhere in your tree to supress that object and it's children. Supression disables reactive keys and effects.
+
+```luau
+Recreate.create {
+	ClassName = "Frame",
+
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.new(0.5, 0, 0.5, 0),
+	Size = UDim2.new(0, 100, 0, 50),
+	
+	[Recreate.renderer.Children] = {
+		{
+			[Recreate.supressed] = true,
+			ClassName = "TextButton",
+			Text = "Hello world!",
+			Size = UDim2.new(1, 0, 1, 0),
+			
+			[Recreate.renderer.Event "Activated"] = function()
+				print("this should not print")
+			end,
+		},
+		{
+			ClassName = "TextButton",
+			Text = "Hello world!",
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.new(0, 0, 1, 0),
+
+			[Recreate.renderer.Event "Activated"] = function()
+				print("this should print")
+			end,
+		},
+	}
+}
+```
 
 # 2. Relayer and Roblox
 
